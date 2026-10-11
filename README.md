@@ -2,7 +2,7 @@
 
 This project demonstrates how to build and deploy a serverless API using AWS Lambda and Amazon API Gateway.
 
-It was completed as part of the NextWork AWS learning pathway and focuses on the logic tier of a three-tier architecture. The API exposes a `/users` resource with a `GET` method that invokes a Lambda function designed to retrieve user data from Amazon DynamoDB.
+It was completed as part of the NextWork AWS learning pathway and focuses on the logic tier of a three-tier architecture. The API uses a `GET` method in API Gateway to invoke a Lambda function designed to retrieve user data from Amazon DynamoDB.
 
 > Learning source: NextWork. This repository contains my own project notes, implementation, and documentation based on the guided lab.
 
@@ -13,7 +13,7 @@ User / Browser
       |
       v
 Amazon API Gateway
-  GET /users
+     GET /
       |
       v
 AWS Lambda
@@ -23,51 +23,53 @@ Amazon DynamoDB
    UserData table
 ```
 
-At this stage of the project, the API and Lambda integration are complete. The DynamoDB table will be added in the next project in the series, so the live API will return an error until the data tier is connected.
+At this stage of the project, the API Gateway and Lambda integration are complete. The DynamoDB table will be added in the next project in the series, so the API is not yet able to return live user records from the data tier.
 
 ## What I Built
 
 - Created an AWS Lambda function for backend logic
 - Configured an Amazon API Gateway REST API
-- Created a `/users` API resource
-- Added a `GET` method to the `/users` resource
-- Connected API Gateway to the Lambda function
+- Created API resources and methods
+- Added a `GET` method in API Gateway
+- Connected API Gateway to the Lambda function using Lambda proxy integration
 - Deployed the API to a `prod` stage
-- Tested the production Invoke URL
-- Created, published, and downloaded API documentation in JSON format
+- Generated a public Invoke URL
+- Created, published, and downloaded API documentation in JSON/Swagger format
 
 ## AWS Services Used
 
 | Service | Purpose |
 |---|---|
 | AWS Lambda | Runs backend code without managing servers |
-| Amazon API Gateway | Exposes the Lambda function through an HTTP API endpoint |
+| Amazon API Gateway | Exposes the Lambda function through an HTTP endpoint |
 | Amazon DynamoDB | Intended data store for user records |
 | AWS IAM | Controls Lambda permissions to access AWS services |
 
 ## API Design
 
-### Resource
-
-```text
-/users
-```
-
 ### Method
 
 ```http
-GET /users?userId=<user-id>
+GET /?userId=<user-id>
 ```
 
-The API receives a `userId` query parameter and passes the request to the Lambda function.
+The API accepts a `userId` query parameter and passes the request to the Lambda function through API Gateway.
+
+Example request:
+
+```http
+GET /?userId=123
+```
 
 ## Lambda Function
 
-The Lambda function:
+The Lambda function is written in JavaScript and uses the AWS SDK for DynamoDB.
+
+The function:
 
 1. Reads the `userId` value from the API Gateway query string.
 2. Creates a DynamoDB `GetCommand` request.
-3. Looks for the matching record in the `UserData` table.
+3. Searches the `UserData` table for the matching `userId`.
 4. Returns the record as JSON if found.
 5. Returns `404` if no matching record exists.
 6. Returns `500` if an unexpected error occurs.
@@ -99,42 +101,92 @@ aws-lambda-api-gateway/
 ├── docs/
 │   ├── api-documentation.json
 │   └── architecture.md
-├── screenshots/
-│   └── .gitkeep
 └── .gitignore
 ```
+
+## API Deployment
+
+The API was deployed to a production stage called:
+
+```text
+prod
+```
+
+Deploying the API created an Invoke URL that can be used by a frontend application or another client to call the live API.
+
+In a real application, this endpoint could be used by a website to request user information from the backend.
+
+## API Documentation
+
+I created documentation directly in Amazon API Gateway and published it for the `prod` stage.
+
+The documentation was exported in Swagger 2.0 JSON format and includes information about:
+
+- API metadata
+- Host and base path
+- Supported protocol
+- API paths
+- HTTP methods
+- Responses
+- API Gateway security policy
+
+Keeping API documentation alongside the project makes the API easier for other developers to understand and integrate with.
 
 ## Key Concepts Learned
 
 ### AWS Lambda
 
-AWS Lambda is a serverless compute service that runs code in response to events without requiring you to provision or manage servers.
+AWS Lambda is a serverless compute service that runs code in response to events without requiring servers to be provisioned or managed.
 
 ### API Gateway
 
-Amazon API Gateway creates and manages APIs that allow users and applications to send requests to backend services such as Lambda.
+Amazon API Gateway provides an entry point for applications to send requests to backend services such as AWS Lambda.
 
 ### API Resources
 
-Resources represent paths within an API. In this project, `/users` represents the user-data resource.
+Resources are paths within an API that help organise different areas of functionality.
 
 ### HTTP Methods
 
-The project uses a `GET` method to retrieve user data. Other common methods include `POST`, `PUT`, and `DELETE`.
+HTTP methods define what action an API performs. This project uses `GET` to retrieve data. Other common methods include `POST`, `PUT`, and `DELETE`.
+
+### Lambda Proxy Integration
+
+Lambda proxy integration allows API Gateway to forward the incoming request directly to Lambda, including request information such as query string parameters.
 
 ### Stages
 
-A stage is a deployed version of an API. I deployed this API to a `prod` stage, which generated a public Invoke URL.
+A stage represents a deployed version of an API. This project uses a `prod` stage for the production deployment.
+
+### Invoke URL
+
+The Invoke URL is the public endpoint generated by API Gateway after deployment. Applications use this URL to send requests to the API.
+
+### JSON
+
+JSON is used to exchange structured data between the API, Lambda function, and client application.
 
 ### API Documentation
 
-I created documentation in API Gateway describing the API resource, method, parameters, and expected responses, then published and downloaded it in JSON format.
+API documentation explains how an API works, including its paths, methods, parameters, and responses. I also exported the deployed API documentation in Swagger format.
 
 ## What I Learned
 
-This project helped me understand how AWS Lambda and API Gateway work together to form a serverless backend. I also gained practical experience with API resources, HTTP methods, deployment stages, Invoke URLs, JSON responses, and API documentation.
+This project helped me understand how AWS Lambda and API Gateway work together to create a serverless backend.
 
-The most challenging part was understanding how API Gateway resources, methods, stages, and Lambda integrations fit together. The most rewarding part was deploying the API and seeing how backend functionality can be exposed without managing traditional servers.
+I gained practical experience with:
+
+- Building backend logic with Lambda
+- Creating REST APIs with API Gateway
+- Connecting API Gateway to Lambda
+- Passing query string parameters to backend code
+- Working with JSON requests and responses
+- Deploying APIs using stages
+- Using production Invoke URLs
+- Creating and exporting API documentation
+- Understanding how DynamoDB will connect to the logic tier
+
+The most challenging part was understanding how API Gateway resources, methods, integrations, and stages fit together. The most rewarding part was deploying the API and seeing how backend functionality can be exposed without managing traditional servers.
 
 ## Three-Tier Architecture Series
 
@@ -150,11 +202,11 @@ This repository represents the logic tier of that architecture.
 ## Next Steps
 
 - Create the DynamoDB `UserData` table
+- Give the Lambda function the required DynamoDB permissions
 - Connect the Lambda function to the data tier
-- Add the required IAM permissions
-- Test successful database retrieval through the API
+- Test successful user retrieval through the API
+- Organise the final API route around the `/users` resource
 - Integrate the API with the frontend tier
-- Add screenshots of the Lambda function, API Gateway resources, deployed `prod` stage, and API documentation
 
 ## Author
 
