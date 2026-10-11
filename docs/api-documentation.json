@@ -1,0 +1,31 @@
+{
+  "api": {
+    "name": "Serverless Users API",
+    "description": "A serverless API built with Amazon API Gateway and AWS Lambda.",
+    "stage": "prod"
+  },
+  "resources": [
+    {
+      "path": "/users",
+      "methods": [
+        {
+          "method": "GET",
+          "description": "Retrieves user data using a userId query parameter.",
+          "queryParameters": [
+            {
+              "name": "userId",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": "User data returned successfully",
+            "400": "Missing userId query parameter",
+            "404": "No user data found",
+            "500": "Failed to retrieve user data"
+          }
+        }
+      ]
+    }
+  ]
+}
